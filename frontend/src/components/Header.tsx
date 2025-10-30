@@ -43,6 +43,16 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
+            <Link 
+              href="/products" 
+              className="text-gray-700 hover:text-green-600 transition duration-300 font-medium relative group"
+            >
+              Products
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-500 group-hover:w-full transition-all duration-300"></span>
+            </Link>
+            
+            {/* Cart Icon */}
+            <CartIcon />
             
             {user ? (
               <div className="flex items-center space-x-4">
@@ -67,14 +77,6 @@ export default function Header() {
                     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-500 group-hover:w-full transition-all duration-300"></span>
                   </Link>
                 )}
-
-                <Link 
-                  href="/products" 
-                  className="text-gray-700 hover:text-green-600 transition duration-300 font-medium relative group"
-                >
-                  Products
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-500 group-hover:w-full transition-all duration-300"></span>
-                </Link>
                 
                 {/* My Orders */}
                 <Link 
@@ -84,10 +86,6 @@ export default function Header() {
                   Orders
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-500 group-hover:w-full transition-all duration-300"></span>
                 </Link>
-
-                
-                 {/* Cart Icon */}
-                  <CartIcon />
 
                 {/* User Menu */}
                 <div className="flex items-center space-x-3 pl-3 border-l border-gray-200">
