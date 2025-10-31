@@ -18,6 +18,9 @@ interface Product {
   isActive: boolean;
 }
 
+// API base URL - uses environment variable for production
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +32,7 @@ export default function Home() {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/products');
+      const response = await axios.get(`${API_BASE_URL}/products`);
       
       // Handle different response structures
       if (response.data.products) {
@@ -41,17 +44,23 @@ export default function Home() {
       } else if (response.data.success && response.data.data) {
         // Alternative API structure
         setProducts(response.data.data.slice(0, 8));
+      } else if (Array.isArray(response.data)) {
+        // Direct array response
+        setProducts(response.data.slice(0, 8));
       } else {
         setProducts([]);
       }
+      setError('');
     } catch (error: any) {
       console.error('Error fetching products:', error);
       
       // More specific error messages
       if (error.code === 'NETWORK_ERROR' || error.code === 'ECONNREFUSED') {
-        setError('Unable to connect to the server. Please make sure the backend is running on port 5000.');
+        setError('Unable to connect to the server. Please try again later.');
       } else if (error.response?.status === 404) {
-        setError('Products endpoint not found. Please check the API route.');
+        setError('Products endpoint not found.');
+      } else if (error.message?.includes('Failed to fetch')) {
+        setError('Unable to reach the server. Please check your connection.');
       } else {
         setError('Unable to load products. Please try again later.');
       }

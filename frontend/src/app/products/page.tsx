@@ -20,6 +20,9 @@ interface Product {
   };
 }
 
+// API base URL - uses environment variable for production
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +51,7 @@ export default function ProductsPage() {
       if (searchTerm) params.search = searchTerm;
       if (selectedCategory) params.category = selectedCategory;
 
-      const response = await axios.get('http://localhost:5000/api/products', { params });
+      const response = await axios.get(`${API_BASE_URL}/products`, { params });
       
       // Handle different API response structures
       if (response.data.products) {
@@ -69,9 +72,11 @@ export default function ProductsPage() {
       
       // More specific error handling
       if (error.code === 'NETWORK_ERROR' || error.code === 'ECONNREFUSED') {
-        setError('Unable to connect to the server. Please make sure the backend is running.');
+        setError('Unable to connect to the server. Please try again later.');
       } else if (error.response?.status === 404) {
-        setError('Products endpoint not found. Please check the API route.');
+        setError('Products endpoint not found.');
+      } else if (error.message?.includes('Failed to fetch')) {
+        setError('Unable to reach the server. Please check your connection.');
       } else {
         setError('Unable to load products. Please try again later.');
       }
