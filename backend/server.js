@@ -94,6 +94,15 @@ app.get('/', (req, res) => {
   });
 });
 
+// Add this before your routes for testing
+app.get('/api/test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Backend is working!',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check route with detailed information
 app.get('/api/health', (req, res) => {
   const healthCheck = {
