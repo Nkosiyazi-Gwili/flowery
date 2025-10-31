@@ -1,711 +1,713 @@
+// seed-complete-data-with-admin.js
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const User = require('./models/User');
+const Vendor = require('./models/Vendor');
 const Product = require('./models/Product');
+const Bouquet = require('./models/Bouquet');
 const Order = require('./models/Order');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/flowery';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://gwilinkosiyazi1:v34FQ0k4xFWyPec3@cluster0.1ccukxh.mongodb.net/flowery?retryWrites=true&w=majority';
 
-// Enhanced Demo Accounts with realistic data
-const demoAccounts = {
-  // Admin Accounts
-  admins: [
-    {
-      name: 'Flowery Administrator',
-      email: 'admin@flowery.com',
-      password: 'Admin123!',
-      role: 'admin',
-      phone: '+1 (555) 010-0001',
-      address: '123 Flower Street, Garden City, GC 10001'
-    },
-    {
-      name: 'System Manager',
-      email: 'manager@flowery.com',
-      password: 'Manager123!',
-      role: 'admin',
-      phone: '+1 (555) 010-0002',
-      address: '456 Blossom Avenue, Bloomington, BL 10002'
-    }
-  ],
-
-  // Florist Vendors
-  florists: [
-    {
-      name: 'Rose Paradise',
-      email: 'rose@flowery.com',
-      password: 'Florist123!',
-      role: 'vendor',
-      vendorType: 'florist',
-      businessName: 'Rose Paradise Florist',
-      phone: '+1 (555) 020-0001',
-      address: '789 Rose Boulevard, Petalville, PV 20001',
-      description: 'Premium roses and romantic arrangements since 2010'
-    },
-    {
-      name: 'Tulip Dreams',
-      email: 'tulip@flowery.com',
-      password: 'Florist123!',
-      role: 'vendor',
-      vendorType: 'florist',
-      businessName: 'Tulip Dreams Florist',
-      phone: '+1 (555) 020-0002',
-      address: '321 Tulip Street, Springfield, SF 20002',
-      description: 'Specializing in tulips and seasonal spring flowers'
-    },
-    {
-      name: 'Lily Elegance',
-      email: 'lily@flowery.com',
-      password: 'Florist123!',
-      role: 'vendor',
-      vendorType: 'florist',
-      businessName: 'Lily Elegance Florist',
-      phone: '+1 (555) 020-0003',
-      address: '654 Lily Lane, Garden City, GC 20003',
-      description: 'Elegant lilies and sophisticated wedding arrangements'
-    },
-    {
-      name: 'Orchid Majesty',
-      email: 'orchid@flowery.com',
-      password: 'Florist123!',
-      role: 'vendor',
-      vendorType: 'florist',
-      businessName: 'Orchid Majesty Florist',
-      phone: '+1 (555) 020-0004',
-      address: '987 Orchid Road, Blossom Hills, BH 20004',
-      description: 'Exotic orchids and premium floral designs'
-    }
-  ],
-
-  // Nursery Vendors
-  nurseries: [
-    {
-      name: 'Green Thumb Nursery',
-      email: 'greenthumb@flowery.com',
-      password: 'Nursery123!',
-      role: 'vendor',
-      vendorType: 'nursery',
-      businessName: 'Green Thumb Plant Nursery',
-      phone: '+1 (555) 030-0001',
-      address: '246 Plant Street, Growtown, GT 30001',
-      description: 'Your local plant experts with 20+ years of experience'
-    },
-    {
-      name: 'Bloom & Grow',
-      email: 'bloom@flowery.com',
-      password: 'Nursery123!',
-      role: 'vendor',
-      vendorType: 'nursery',
-      businessName: 'Bloom & Grow Nursery',
-      phone: '+1 (555) 030-0002',
-      address: '135 Garden Avenue, Plantville, PV 30002',
-      description: 'Quality plants and gardening supplies for every home'
-    },
-    {
-      name: 'Succulent Haven',
-      email: 'succulent@flowery.com',
-      password: 'Nursery123!',
-      role: 'vendor',
-      vendorType: 'nursery',
-      businessName: 'Succulent Haven Nursery',
-      phone: '+1 (555) 030-0003',
-      address: '579 Cactus Road, Desert Springs, DS 30003',
-      description: 'Specialists in succulents, cacti, and low-maintenance plants'
-    }
-  ],
-
-  // Customer Accounts
-  customers: [
-    {
-      name: 'Emma Wilson',
-      email: 'emma@flowery.com',
-      password: 'Customer123!',
-      role: 'customer',
-      phone: '+1 (555) 040-0001',
-      address: '100 Customer Road, Client City, CC 40001'
-    },
-    {
-      name: 'James Rodriguez',
-      email: 'james@flowery.com',
-      password: 'Customer123!',
-      role: 'customer',
-      phone: '+1 (555) 040-0002',
-      address: '200 Buyer Street, Purchase Town, PT 40002'
-    },
-    {
-      name: 'Sarah Chen',
-      email: 'sarah@flowery.com',
-      password: 'Customer123!',
-      role: 'customer',
-      phone: '+1 (555) 040-0003',
-      address: '300 Shopper Avenue, Retail City, RC 40003'
-    },
-    {
-      name: 'Michael Brown',
-      email: 'michael@flowery.com',
-      password: 'Customer123!',
-      role: 'customer',
-      phone: '+1 (555) 040-0004',
-      address: '400 Consumer Lane, Market Ville, MV 40004'
-    },
-    {
-      name: 'Lisa Thompson',
-      email: 'lisa@flowery.com',
-      password: 'Customer123!',
-      role: 'customer',
-      phone: '+1 (555) 040-0005',
-      address: '500 Client Boulevard, Service City, SC 40005'
-    }
-  ]
+// Admin User
+const adminUser = {
+  name: 'Flowery Administrator',
+  email: 'admin@flowery.com',
+  password: 'Admin123!',
+  role: 'admin',
+  phone: '+1 (555) 000-0001',
+  address: {
+    street: '1 Flowery Headquarters',
+    city: 'San Francisco',
+    state: 'CA',
+    zipCode: '94101',
+    country: 'USA'
+  },
+  isActive: true,
+  emailVerified: true
 };
 
-// Enhanced Product Catalog with realistic data
-const enhancedProducts = [
-  // Rose Paradise Florist Products
+// Sample Users (Customers)
+const sampleUsers = [
   {
-    name: 'Classic Red Roses Bouquet',
-    description: 'A dozen premium long-stemmed red roses, perfectly arranged with baby\'s breath and greenery. Symbolizes deep love and passion.',
-    price: 79.99,
-    category: 'Roses',
-    images: [
-      'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=600&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 25,
-    tags: ['romantic', 'anniversary', 'valentine', 'premium', 'red-roses']
-  },
-  {
-    name: 'Pink Rose Elegance Arrangement',
-    description: 'Soft pink roses complemented by white hydrangeas and eucalyptus in a crystal vase. Perfect for birthdays and celebrations.',
-    price: 65.99,
-    category: 'Roses',
-    images: [
-      'https://images.unsplash.com/photo-1578948856697-db91d246b7b1?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 18,
-    tags: ['pink', 'elegant', 'birthday', 'celebration', 'luxury']
-  },
-  {
-    name: 'Rainbow Rose Collection',
-    description: 'Stunning mix of multicolored roses including red, pink, yellow, and white. A vibrant and joyful arrangement.',
-    price: 89.99,
-    category: 'Roses',
-    images: [
-      'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 12,
-    tags: ['colorful', 'rainbow', 'mixed', 'vibrant', 'special-occasion']
-  },
-
-  // Tulip Dreams Florist Products
-  {
-    name: 'Dutch Tulip Festival Bouquet',
-    description: 'Vibrant mix of red, yellow, and purple Dutch tulips that bring the essence of spring indoors.',
-    price: 45.99,
-    category: 'Tulips',
-    images: [
-      'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 35,
-    tags: ['dutch', 'spring', 'colorful', 'fresh', 'seasonal']
-  },
-  {
-    name: 'White Tulip Serenity',
-    description: 'Pure white tulips symbolizing purity, forgiveness, and new beginnings. Ideal for weddings and sympathy.',
-    price: 42.99,
-    category: 'Tulips',
-    images: [
-      'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 28,
-    tags: ['white', 'pure', 'wedding', 'sympathy', 'elegant']
-  },
-  {
-    name: 'Pink Tulip Romance',
-    description: 'Soft pink tulips expressing affection and caring feelings. Perfect for showing someone you care.',
-    price: 48.99,
-    category: 'Tulips',
-    images: [
-      'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 22,
-    tags: ['pink', 'romance', 'affection', 'caring', 'spring']
-  },
-
-  // Lily Elegance Florist Products
-  {
-    name: 'Stargazer Lily Extravaganza',
-    description: 'Fragrant pink stargazer lilies known for their vibrant colors and intoxicating scent. Long-lasting beauty.',
-    price: 68.99,
-    category: 'Lilies',
-    images: [
-      'https://images.unsplash.com/photo-1572451479134-8a4dc43a8a04?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 20,
-    tags: ['stargazer', 'fragrant', 'pink', 'luxury', 'long-lasting']
-  },
-  {
-    name: 'White Calla Lily Elegance',
-    description: 'Sophisticated white calla lilies in a modern arrangement. Perfect for weddings and formal events.',
-    price: 75.99,
-    category: 'Lilies',
-    images: [
-      'https://images.unsplash.com/photo-1572451479134-8a4dc43a8a04?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 15,
-    tags: ['calla', 'white', 'wedding', 'formal', 'sophisticated']
-  },
-  {
-    name: 'Mixed Lily Symphony',
-    description: 'Beautiful combination of Asiatic, Oriental, and LA hybrid lilies in one stunning arrangement.',
-    price: 82.99,
-    category: 'Lilies',
-    images: [
-      'https://images.unsplash.com/photo-1572451479134-8a4dc43a8a04?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 18,
-    tags: ['mixed', 'variety', 'luxury', 'premium', 'symphony']
-  },
-
-  // Orchid Majesty Florist Products
-  {
-    name: 'Phalaenopsis Orchid Plant',
-    description: 'Beautiful purple moth orchid in decorative ceramic pot. Low maintenance and blooms last for months.',
-    price: 39.99,
-    category: 'Orchids',
-    images: [
-      'https://images.unsplash.com/photo-1597848212624-e6d4bd7e1e92?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 30,
-    tags: ['phalaenopsis', 'purple', 'indoor', 'low-maintenance', 'elegant']
-  },
-  {
-    name: 'White Orchid Elegance',
-    description: 'Pure white orchids symbolizing beauty, luxury, and strength. Perfect for home or office decor.',
-    price: 44.99,
-    category: 'Orchids',
-    images: [
-      'https://images.unsplash.com/photo-1597848212624-e6d4bd7e1e92?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 25,
-    tags: ['white', 'elegant', 'luxury', 'decor', 'premium']
-  },
-  {
-    name: 'Mini Orchid Collection',
-    description: 'Set of 3 mini orchids in different colors. Perfect for small spaces and as gifts.',
-    price: 54.99,
-    category: 'Orchids',
-    images: [
-      'https://images.unsplash.com/photo-1597848212624-e6d4bd7e1e92?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 20,
-    tags: ['mini', 'collection', 'gift', 'small-space', 'colorful']
-  },
-
-  // Green Thumb Nursery Products
-  {
-    name: 'Succulent Garden Box',
-    description: 'Collection of 6 different succulent varieties in a rustic wooden box. Low maintenance and modern.',
-    price: 34.99,
-    category: 'Plants',
-    images: [
-      'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 45,
-    tags: ['succulent', 'collection', 'low-maintenance', 'modern', 'indoor']
-  },
-  {
-    name: 'Peace Lily Plant',
-    description: 'Air-purifying peace lily that removes toxins and brings tranquility to any space. Easy to care for.',
-    price: 24.99,
-    category: 'Plants',
-    images: [
-      'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 35,
-    tags: ['peace-lily', 'air-purifying', 'indoor', 'easy-care', 'health']
-  },
-  {
-    name: 'Snake Plant Sansevieria',
-    description: 'Extremely hardy snake plant that thrives on neglect. Perfect for beginners and busy people.',
-    price: 29.99,
-    category: 'Plants',
-    images: [
-      'https://images.unsplash.com/photo-1593693397697-15ac76dfc5fe?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 40,
-    tags: ['snake-plant', 'hardy', 'beginner', 'low-light', 'air-purifying']
-  },
-
-  // Bloom & Grow Nursery Products
-  {
-    name: 'Sunflower Sunshine Bouquet',
-    description: 'Bright and cheerful sunflowers that bring instant happiness and summer vibes to any room.',
-    price: 47.99,
-    category: 'Sunflowers',
-    images: [
-      'https://images.unsplash.com/photo-1597848212624-e6d4bd7e1e92?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 28,
-    tags: ['sunflower', 'summer', 'happy', 'bright', 'cheerful']
-  },
-  {
-    name: 'Herb Garden Starter Kit',
-    description: 'Complete kit with basil, mint, rosemary, and thyme. Perfect for kitchen gardening.',
-    price: 32.99,
-    category: 'Plants',
-    images: [
-      'https://images.unsplash.com/photo-1597848212624-e6d4bd7e1e92?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 50,
-    tags: ['herb', 'kitchen', 'starter-kit', 'cooking', 'fresh']
-  },
-  {
-    name: 'Lavender Plant Bundle',
-    description: 'Set of 3 lavender plants known for their calming scent and beautiful purple flowers.',
-    price: 38.99,
-    category: 'Plants',
-    images: [
-      'https://images.unsplash.com/photo-1593693397697-15ac76dfc5fe?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 30,
-    tags: ['lavender', 'calming', 'fragrant', 'medicinal', 'purple']
-  },
-
-  // Succulent Haven Nursery Products
-  {
-    name: 'Rare Succulent Collection',
-    description: 'Collection of 4 rare succulent varieties for the serious collector. Includes care guide.',
-    price: 49.99,
-    category: 'Plants',
-    images: [
-      'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 15,
-    tags: ['rare', 'succulent', 'collector', 'unique', 'special']
-  },
-  {
-    name: 'Cactus Garden Assortment',
-    description: 'Assortment of 5 different cactus varieties in a desert-themed arrangement.',
-    price: 41.99,
-    category: 'Plants',
-    images: [
-      'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 25,
-    tags: ['cactus', 'desert', 'low-water', 'unique', 'decor']
-  },
-  {
-    name: 'Hanging Succulent Basket',
-    description: 'Beautiful arrangement of trailing succulents in a hanging basket. Perfect for patios.',
-    price: 36.99,
-    category: 'Plants',
-    images: [
-      'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600&auto=format&fit=crop&q=80'
-    ],
-    stock: 20,
-    tags: ['hanging', 'trailing', 'patio', 'outdoor', 'decorative']
-  }
-];
-
-// Enhanced Sample Orders with realistic scenarios
-const enhancedOrders = [
-  // Emma's Orders
-  {
-    customer: null, // Will be populated
-    items: [
-      { product: null, quantity: 1, price: 79.99 }, // Classic Red Roses
-      { product: null, quantity: 1, price: 39.99 }  // Phalaenopsis Orchid
-    ],
-    totalAmount: 119.98,
-    status: 'delivered',
-    shippingAddress: {
-      street: '100 Customer Road',
-      city: 'Client City',
+    name: 'Emma Wilson',
+    email: 'emma@flowery.com',
+    password: 'Customer123!',
+    role: 'customer',
+    phone: '+1 (555) 010-1001',
+    address: {
+      street: '123 Rosewood Lane',
+      city: 'San Francisco',
       state: 'CA',
-      zipCode: '90210',
+      zipCode: '94102',
       country: 'USA'
     },
-    paymentStatus: 'paid',
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
+    isActive: true,
+    emailVerified: true
   },
   {
-    customer: null,
-    items: [
-      { product: null, quantity: 2, price: 34.99 }  // Succulent Garden Box
-    ],
-    totalAmount: 69.98,
-    status: 'out_for_delivery',
-    shippingAddress: {
-      street: '100 Customer Road',
-      city: 'Client City',
-      state: 'CA',
-      zipCode: '90210',
-      country: 'USA'
-    },
-    paymentStatus: 'paid',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
-  },
-
-  // James's Orders
-  {
-    customer: null,
-    items: [
-      { product: null, quantity: 1, price: 68.99 }, // Stargazer Lily
-      { product: null, quantity: 1, price: 47.99 }  // Sunflower Bouquet
-    ],
-    totalAmount: 116.98,
-    status: 'preparing',
-    shippingAddress: {
-      street: '200 Buyer Street',
-      city: 'Purchase Town',
+    name: 'James Rodriguez',
+    email: 'james@flowery.com',
+    password: 'Customer123!',
+    role: 'customer',
+    phone: '+1 (555) 010-1002',
+    address: {
+      street: '456 Blossom Street',
+      city: 'New York',
       state: 'NY',
       zipCode: '10001',
       country: 'USA'
     },
-    paymentStatus: 'paid',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+    isActive: true,
+    emailVerified: true
   },
-
-  // Sarah's Orders
   {
-    customer: null,
-    items: [
-      { product: null, quantity: 1, price: 65.99 }, // Pink Rose Elegance
-      { product: null, quantity: 1, price: 32.99 }  // Herb Garden Kit
-    ],
-    totalAmount: 98.98,
-    status: 'confirmed',
-    shippingAddress: {
-      street: '300 Shopper Avenue',
-      city: 'Retail City',
-      state: 'TX',
-      zipCode: '75001',
+    name: 'Sarah Chen',
+    email: 'sarah@flowery.com',
+    password: 'Customer123!',
+    role: 'customer',
+    phone: '+1 (555) 010-1003',
+    address: {
+      street: '789 Petal Avenue',
+      city: 'Los Angeles',
+      state: 'CA',
+      zipCode: '90001',
       country: 'USA'
     },
-    paymentStatus: 'paid',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
+    isActive: true,
+    emailVerified: true
   },
-
-  // Michael's Orders
   {
-    customer: null,
-    items: [
-      { product: null, quantity: 1, price: 89.99 }  // Rainbow Rose Collection
-    ],
-    totalAmount: 89.99,
-    status: 'pending',
-    shippingAddress: {
-      street: '400 Consumer Lane',
-      city: 'Market Ville',
+    name: 'Michael Brown',
+    email: 'michael@flowery.com',
+    password: 'Customer123!',
+    role: 'customer',
+    phone: '+1 (555) 010-1004',
+    address: {
+      street: '321 Garden Road',
+      city: 'Chicago',
+      state: 'IL',
+      zipCode: '60601',
+      country: 'USA'
+    },
+    isActive: true,
+    emailVerified: true
+  },
+  {
+    name: 'Lisa Thompson',
+    email: 'lisa@flowery.com',
+    password: 'Customer123!',
+    role: 'customer',
+    phone: '+1 (555) 010-1005',
+    address: {
+      street: '654 Flower Street',
+      city: 'Miami',
       state: 'FL',
       zipCode: '33101',
       country: 'USA'
     },
-    paymentStatus: 'pending',
-    createdAt: new Date() // Today
-  },
-
-  // Lisa's Orders
-  {
-    customer: null,
-    items: [
-      { product: null, quantity: 1, price: 75.99 }, // White Calla Lily
-      { product: null, quantity: 1, price: 49.99 }  // Rare Succulent Collection
-    ],
-    totalAmount: 125.98,
-    status: 'delivered',
-    shippingAddress: {
-      street: '500 Client Boulevard',
-      city: 'Service City',
-      state: 'IL',
-      zipCode: '60007',
-      country: 'USA'
-    },
-    paymentStatus: 'paid',
-    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) // 14 days ago
+    isActive: true,
+    emailVerified: true
   }
 ];
 
-async function seedAdvanced() {
+// Sample Vendors
+const sampleVendors = [
+  {
+    name: 'Rose Smith',
+    email: 'rose@flowery.com',
+    password: 'Vendor123!',
+    businessName: 'Rose Paradise Florist',
+    businessType: 'florist',
+    phone: '+1 (555) 020-2001',
+    address: {
+      street: '123 Flower Market',
+      city: 'San Francisco',
+      state: 'CA',
+      zipCode: '94103',
+      country: 'USA'
+    },
+    description: 'Premium roses and romantic arrangements since 2010. Specializing in wedding and event florals.',
+    services: ['Wedding Arrangements', 'Event Decor', 'Custom Bouquets', 'Delivery'],
+    deliveryAreas: ['San Francisco', 'Oakland', 'San Jose'],
+    businessHours: {
+      monday: { open: '09:00', close: '18:00' },
+      tuesday: { open: '09:00', close: '18:00' },
+      wednesday: { open: '09:00', close: '18:00' },
+      thursday: { open: '09:00', close: '18:00' },
+      friday: { open: '09:00', close: '18:00' },
+      saturday: { open: '10:00', close: '16:00' },
+      sunday: { open: '11:00', close: '15:00' }
+    },
+    isVerified: true,
+    isActive: true,
+    rating: 4.8,
+    reviewCount: 127
+  },
+  {
+    name: 'John Green',
+    email: 'greenthumb@flowery.com',
+    password: 'Vendor123!',
+    businessName: 'Green Thumb Nursery',
+    businessType: 'nursery',
+    phone: '+1 (555) 020-2002',
+    address: {
+      street: '456 Plant Boulevard',
+      city: 'San Jose',
+      state: 'CA',
+      zipCode: '95101',
+      country: 'USA'
+    },
+    description: 'Your local plant experts with 25+ years of experience. Specializing in indoor plants and gardening supplies.',
+    services: ['Plant Sales', 'Gardening Supplies', 'Landscaping', 'Plant Care Workshops'],
+    deliveryAreas: ['San Jose', 'Santa Clara', 'Palo Alto'],
+    businessHours: {
+      monday: { open: '08:00', close: '17:00' },
+      tuesday: { open: '08:00', close: '17:00' },
+      wednesday: { open: '08:00', close: '17:00' },
+      thursday: { open: '08:00', close: '17:00' },
+      friday: { open: '08:00', close: '17:00' },
+      saturday: { open: '09:00', close: '16:00' },
+      sunday: { open: '10:00', close: '15:00' }
+    },
+    isVerified: true,
+    isActive: true,
+    rating: 4.6,
+    reviewCount: 89
+  },
+  {
+    name: 'Lily Chen',
+    email: 'lily@flowery.com',
+    password: 'Vendor123!',
+    businessName: 'Lily Elegance Florist',
+    businessType: 'florist',
+    phone: '+1 (555) 020-2003',
+    address: {
+      street: '789 Blossom Avenue',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10002',
+      country: 'USA'
+    },
+    description: 'Elegant floral designs for sophisticated events and corporate clients.',
+    services: ['Corporate Events', 'Luxury Arrangements', 'Same-Day Delivery', 'Floral Subscriptions'],
+    deliveryAreas: ['Manhattan', 'Brooklyn', 'Queens'],
+    businessHours: {
+      monday: { open: '08:30', close: '19:00' },
+      tuesday: { open: '08:30', close: '19:00' },
+      wednesday: { open: '08:30', close: '19:00' },
+      thursday: { open: '08:30', close: '19:00' },
+      friday: { open: '08:30', close: '19:00' },
+      saturday: { open: '09:00', close: '17:00' },
+      sunday: { open: '10:00', close: '16:00' }
+    },
+    isVerified: true,
+    isActive: true,
+    rating: 4.9,
+    reviewCount: 203
+  }
+];
+
+// Sample Products
+const sampleProducts = [
+  // Rose Products
+  {
+    name: 'Premium Red Roses - Dozen',
+    type: 'flower',
+    category: 'roses',
+    description: 'A dozen premium long-stemmed red roses, perfectly arranged with baby\'s breath and greenery. Symbolizes deep love and passion.',
+    price: 79.99,
+    cost: 45.00,
+    images: [
+      'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?w=600&auto=format&fit=crop&q=80'
+    ],
+    stockQuantity: 25,
+    lowStockThreshold: 5,
+    season: ['spring', 'summer', 'fall', 'winter'],
+    colors: ['red'],
+    fragrance: 'medium',
+    careInstructions: 'Change water every 2 days and trim stems at an angle. Keep away from direct sunlight.',
+    vaseLife: 7,
+    tags: ['romantic', 'anniversary', 'valentine', 'premium', 'luxury'],
+    isFeatured: true,
+    isActive: true,
+    popularity: 95,
+    salesCount: 142
+  },
+  {
+    name: 'Pink Rose Elegance Bouquet',
+    type: 'flower',
+    category: 'roses',
+    description: 'Beautiful pink roses complemented by white hydrangeas and eucalyptus in a crystal vase.',
+    price: 65.99,
+    cost: 35.00,
+    images: [
+      'https://images.unsplash.com/photo-1578948856697-db91d246b7b1?w=600&auto=format&fit=crop&q=80'
+    ],
+    stockQuantity: 18,
+    lowStockThreshold: 5,
+    season: ['spring', 'summer'],
+    colors: ['pink', 'white'],
+    fragrance: 'light',
+    careInstructions: 'Keep in cool area away from direct sunlight. Change water every 3 days.',
+    vaseLife: 6,
+    tags: ['pink', 'elegant', 'birthday', 'celebration'],
+    isFeatured: false,
+    isActive: true,
+    popularity: 78,
+    salesCount: 87
+  },
+
+  // Lily Products
+  {
+    name: 'Stargazer Lily Bouquet',
+    type: 'flower',
+    category: 'lilies',
+    description: 'Fragrant pink stargazer lilies known for their vibrant colors and intoxicating scent. Long-lasting beauty.',
+    price: 68.99,
+    cost: 38.00,
+    images: [
+      'https://images.unsplash.com/photo-1572451479134-8a4dc43a8a04?w=600&auto=format&fit=crop&q=80'
+    ],
+    stockQuantity: 20,
+    lowStockThreshold: 5,
+    season: ['summer'],
+    colors: ['pink', 'white'],
+    fragrance: 'strong',
+    careInstructions: 'Remove pollen to prevent staining and change water frequently. Keep in well-ventilated area.',
+    vaseLife: 8,
+    tags: ['stargazer', 'fragrant', 'luxury', 'long-lasting'],
+    isFeatured: true,
+    isActive: true,
+    popularity: 82,
+    salesCount: 93
+  },
+
+  // Tulip Products
+  {
+    name: 'Dutch Tulip Festival Bouquet',
+    type: 'flower',
+    category: 'tulips',
+    description: 'Vibrant mix of red, yellow, and purple Dutch tulips that bring the essence of spring indoors.',
+    price: 45.99,
+    cost: 25.00,
+    images: [
+      'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=600&auto=format&fit=crop&q=80'
+    ],
+    stockQuantity: 35,
+    lowStockThreshold: 5,
+    season: ['spring'],
+    colors: ['red', 'yellow', 'purple'],
+    fragrance: 'light',
+    careInstructions: 'Keep in cool water and away from fruits. Tulips continue to grow after cutting.',
+    vaseLife: 5,
+    tags: ['dutch', 'spring', 'colorful', 'fresh', 'seasonal'],
+    isFeatured: true,
+    isActive: true,
+    popularity: 88,
+    salesCount: 156
+  },
+
+  // Orchid Products
+  {
+    name: 'Phalaenopsis Orchid Plant',
+    type: 'flower',
+    category: 'orchids',
+    description: 'Beautiful purple moth orchid in decorative ceramic pot. Low maintenance and blooms last for months.',
+    price: 39.99,
+    cost: 20.00,
+    images: [
+      'https://images.unsplash.com/photo-1597848212624-e6d4bd7e1e92?w=600&auto=format&fit=crop&q=80'
+    ],
+    stockQuantity: 30,
+    lowStockThreshold: 5,
+    season: ['spring', 'summer', 'fall', 'winter'],
+    colors: ['purple'],
+    fragrance: 'none',
+    careInstructions: 'Water once a week and provide indirect sunlight. Avoid overwatering.',
+    vaseLife: 90,
+    tags: ['phalaenopsis', 'indoor', 'low-maintenance', 'elegant'],
+    isFeatured: true,
+    isActive: true,
+    popularity: 91,
+    salesCount: 204
+  },
+
+  // Sunflower Products
+  {
+    name: 'Sunflower Sunshine Bouquet',
+    type: 'flower',
+    category: 'sunflowers',
+    description: 'Bright and cheerful sunflowers that bring instant happiness and summer vibes to any room.',
+    price: 47.99,
+    cost: 25.00,
+    images: [
+      'https://images.unsplash.com/photo-1597848212624-e6d4bd7e1e92?w=600&auto=format&fit=crop&q=80'
+    ],
+    stockQuantity: 28,
+    lowStockThreshold: 5,
+    season: ['summer', 'fall'],
+    colors: ['yellow'],
+    fragrance: 'none',
+    careInstructions: 'Change water daily and trim stems regularly. Keep away from ethylene-producing fruits.',
+    vaseLife: 7,
+    tags: ['sunflower', 'summer', 'happy', 'bright', 'cheerful'],
+    isFeatured: true,
+    isActive: true,
+    popularity: 86,
+    salesCount: 178
+  },
+
+  // Greenery
+  {
+    name: 'Eucalyptus Greenery Bundle',
+    type: 'greenery',
+    category: 'mixed',
+    description: 'Fresh eucalyptus branches perfect for arrangements and home decor. Adds texture and fragrance.',
+    price: 24.99,
+    cost: 12.00,
+    images: [
+      'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600&auto=format&fit=crop&q=80'
+    ],
+    stockQuantity: 40,
+    lowStockThreshold: 5,
+    season: ['spring', 'summer', 'fall', 'winter'],
+    colors: ['green'],
+    fragrance: 'light',
+    careInstructions: 'Can be used fresh or dried for long-lasting decor. Refresh with water mist.',
+    vaseLife: 14,
+    tags: ['eucalyptus', 'greenery', 'filler', 'decor', 'aromatic'],
+    isFeatured: false,
+    isActive: true,
+    popularity: 68,
+    salesCount: 89
+  },
+
+  // Filler Flowers
+  {
+    name: 'Baby\'s Breath Bundle',
+    type: 'filler',
+    category: 'mixed',
+    description: 'Delicate baby\'s breath perfect for complementing arrangements or creating airy bouquets.',
+    price: 19.99,
+    cost: 8.00,
+    images: [
+      'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=600&auto=format&fit=crop&q=80'
+    ],
+    stockQuantity: 50,
+    lowStockThreshold: 5,
+    season: ['spring', 'summer', 'fall'],
+    colors: ['white'],
+    fragrance: 'none',
+    careInstructions: 'Change water every 4-5 days. Can be dried for permanent arrangements.',
+    vaseLife: 10,
+    tags: ['filler', 'delicate', 'airy', 'complementary'],
+    isFeatured: false,
+    isActive: true,
+    popularity: 61,
+    salesCount: 134
+  }
+];
+
+// Sample Bouquets
+const sampleBouquets = [
+  {
+    name: 'Romantic Red Rose Bouquet',
+    description: 'A stunning arrangement of premium red roses, perfect for anniversaries and romantic occasions.',
+    basePrice: 89.99,
+    images: [
+      'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=600&auto=format&fit=crop&q=80'
+    ],
+    size: 'large',
+    occasion: ['anniversary', 'valentine', 'romantic'],
+    colors: ['red'],
+    style: 'luxury',
+    isCustom: false,
+    isActive: true,
+    careInstructions: 'Change water every 2 days and trim stems. Keep in cool location.',
+    tags: ['romantic', 'luxury', 'anniversary'],
+    popularity: 92
+  },
+  {
+    name: 'Spring Garden Medley',
+    description: 'Fresh seasonal spring flowers including tulips, daffodils, and hyacinths celebrating new beginnings.',
+    basePrice: 65.99,
+    images: [
+      'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=600&auto=format&fit=crop&q=80'
+    ],
+    size: 'medium',
+    occasion: ['birthday', 'spring', 'celebration'],
+    colors: ['yellow', 'purple', 'pink', 'white'],
+    style: 'traditional',
+    isCustom: false,
+    isActive: true,
+    careInstructions: 'Perfect for spring celebrations. Keep in cool area and change water every 3 days.',
+    tags: ['spring', 'seasonal', 'fresh', 'garden'],
+    popularity: 85
+  },
+  {
+    name: 'Sunshine Happiness Bouquet',
+    description: 'Bright and cheerful arrangement featuring sunflowers and seasonal blooms to brighten any day.',
+    basePrice: 55.99,
+    images: [
+      'https://images.unsplash.com/photo-1597848212624-e6d4bd7e1e92?w=600&auto=format&fit=crop&q=80'
+    ],
+    size: 'medium',
+    occasion: ['get-well', 'birthday', 'thank-you'],
+    colors: ['yellow', 'orange'],
+    style: 'modern',
+    isCustom: false,
+    isActive: true,
+    careInstructions: 'Change water daily and keep in bright, indirect light.',
+    tags: ['happy', 'bright', 'cheerful', 'sunshine'],
+    popularity: 78
+  }
+];
+
+async function seedCompleteDataWithAdmin() {
   try {
-    console.log('🌱 Starting Enhanced Database Seeding...');
-    console.log('=========================================\n');
+    console.log('🚀 Starting Complete Data Seeding (With Admin)...');
+    console.log('================================================\n');
     
     await mongoose.connect(MONGODB_URI);
-    console.log('✅ Connected to MongoDB\n');
+    console.log('✅ Connected to MongoDB Atlas\n');
 
     // Clear existing data
     console.log('🗑️  Clearing existing data...');
     await User.deleteMany({});
+    await Vendor.deleteMany({});
     await Product.deleteMany({});
+    await Bouquet.deleteMany({});
     await Order.deleteMany({});
-    console.log('✅ Existing data cleared\n');
+    console.log('✅ All existing data cleared\n');
 
-    // Create Users
-    console.log('👥 Creating Demo Accounts...');
-    console.log('----------------------------');
+    // Create Admin User First
+    console.log('👑 Creating Admin User...');
+    console.log('------------------------');
     
-    const allUsers = [];
+    const hashedAdminPassword = await bcrypt.hash(adminUser.password, 12);
+    const admin = new User({
+      ...adminUser,
+      password: hashedAdminPassword
+    });
+    await admin.save();
+    console.log(`✅ ADMIN: ${admin.name} (${admin.email})`);
+    console.log('   🔑 Password: Admin123!\n');
+
+    // Create Users (Customers)
+    console.log('👥 Creating Customers...');
+    console.log('----------------------');
     
-    // Create Admins
-    for (const adminData of demoAccounts.admins) {
-      const admin = new User(adminData);
-      await admin.save();
-      allUsers.push(admin);
-      console.log(`✅ ADMIN: ${admin.name} (${admin.email})`);
+    const allUsers = [admin];
+    for (const userData of sampleUsers) {
+      const hashedPassword = await bcrypt.hash(userData.password, 12);
+      const user = new User({
+        ...userData,
+        password: hashedPassword
+      });
+      await user.save();
+      allUsers.push(user);
+      console.log(`✅ CUSTOMER: ${user.name} (${user.email})`);
     }
+    console.log(`📊 Created ${allUsers.length} total users (1 admin + ${sampleUsers.length} customers)\n`);
 
-    // Create Florists
-    const florists = [];
-    for (const floristData of demoAccounts.florists) {
-      const florist = new User(floristData);
-      await florist.save();
-      allUsers.push(florist);
-      florists.push(florist);
-      console.log(`✅ FLORIST: ${florist.businessName} (${florist.email})`);
+    // Create Vendors
+    console.log('🏪 Creating Vendors...');
+    console.log('---------------------');
+    
+    const allVendors = [];
+    for (const vendorData of sampleVendors) {
+      const vendor = new Vendor(vendorData);
+      await vendor.save();
+      allVendors.push(vendor);
+      console.log(`✅ VENDOR: ${vendor.businessName} (${vendor.businessType})`);
     }
-
-    // Create Nurseries
-    const nurseries = [];
-    for (const nurseryData of demoAccounts.nurseries) {
-      const nursery = new User(nurseryData);
-      await nursery.save();
-      allUsers.push(nursery);
-      nurseries.push(nursery);
-      console.log(`✅ NURSERY: ${nursery.businessName} (${nursery.email})`);
-    }
-
-    // Create Customers
-    const customers = [];
-    for (const customerData of demoAccounts.customers) {
-      const customer = new User(customerData);
-      await customer.save();
-      allUsers.push(customer);
-      customers.push(customer);
-      console.log(`✅ CUSTOMER: ${customer.name} (${customer.email})`);
-    }
-
-    console.log(`\n📊 Created ${allUsers.length} total users\n`);
+    console.log(`📊 Created ${allVendors.length} vendors\n`);
 
     // Create Products
-    console.log('💐 Creating Enhanced Product Catalog...');
-    console.log('--------------------------------------');
+    console.log('💐 Creating Products...');
+    console.log('----------------------');
     
     const allProducts = [];
-    const vendors = [...florists, ...nurseries];
-    
-    for (let i = 0; i < enhancedProducts.length; i++) {
-      const vendor = vendors[i % vendors.length];
-      const productData = {
-        ...enhancedProducts[i],
-        vendor: vendor._id
-      };
-      
+    for (const productData of sampleProducts) {
       const product = new Product(productData);
       await product.save();
       allProducts.push(product);
-      console.log(`✅ ${product.category.toUpperCase()}: ${product.name} - $${product.price} (${vendor.businessName})`);
+      console.log(`✅ PRODUCT: ${product.category} - ${product.name}`);
     }
+    console.log(`📊 Created ${allProducts.length} products\n`);
 
-    console.log(`\n📊 Created ${allProducts.length} products across ${vendors.length} vendors\n`);
+    // Create Bouquets with flower relationships
+    console.log('💐 Creating Bouquets...');
+    console.log('----------------------');
+    
+    const allBouquets = [];
+    for (let i = 0; i < sampleBouquets.length; i++) {
+      const bouquetData = sampleBouquets[i];
+      
+      // Assign flowers to bouquets based on their type
+      const bouquetFlowers = allProducts
+        .filter(product => {
+          if (i === 0) return product.category === 'roses'; // Romantic bouquet gets roses
+          if (i === 1) return product.category === 'tulips' || product.type === 'filler'; // Spring bouquet
+          if (i === 2) return product.category === 'sunflowers'; // Sunshine bouquet
+          return true;
+        })
+        .slice(0, 3) // Take first 3 matching products
+        .map(product => ({
+          product: product._id,
+          quantity: Math.floor(Math.random() * 3) + 1 // 1-3 of each flower
+        }));
 
-    // Create Orders
+      const bouquet = new Bouquet({
+        ...bouquetData,
+        flowers: bouquetFlowers
+      });
+      await bouquet.save();
+      allBouquets.push(bouquet);
+      console.log(`✅ BOUQUET: ${bouquet.name} (${bouquet.flowers.length} flower types)`);
+    }
+    console.log(`📊 Created ${allBouquets.length} bouquets\n`);
+
+    // Create Sample Orders
     console.log('📦 Creating Sample Orders...');
     console.log('---------------------------');
     
     const allOrders = [];
-    
-    for (let i = 0; i < enhancedOrders.length; i++) {
-      const orderData = enhancedOrders[i];
-      const customer = customers[i % customers.length];
-      
-      // Assign actual products to order items
-      const orderItems = orderData.items.map((item, index) => {
-        const productIndex = (i * 2 + index) % allProducts.length;
-        const product = allProducts[productIndex];
-        return {
-          product: product._id,
-          quantity: item.quantity,
-          price: product.price
-        };
-      });
+    const orderTemplates = [
+      {
+        bouquet: allBouquets[0]._id, // Romantic bouquet
+        deliveryType: 'home',
+        deliveryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+        specialInstructions: 'Please include a happy anniversary note',
+        status: 'confirmed'
+      },
+      {
+        bouquet: allBouquets[1]._id, // Spring bouquet
+        deliveryType: 'pickup',
+        deliveryDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day from now
+        specialInstructions: 'For birthday celebration',
+        status: 'processing'
+      },
+      {
+        bouquet: allBouquets[2]._id, // Sunshine bouquet
+        deliveryType: 'home',
+        deliveryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+        specialInstructions: 'Get well soon message',
+        status: 'pending'
+      }
+    ];
 
-      // Recalculate total amount
-      const totalAmount = orderItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    for (let i = 0; i < orderTemplates.length && i < sampleUsers.length; i++) {
+      const orderTemplate = orderTemplates[i];
+      const customer = allUsers.find(u => u.email === sampleUsers[i].email); // Find the actual customer
+      const bouquet = allBouquets[i % allBouquets.length];
 
-      const order = new Order({
-        ...orderData,
-        items: orderItems,
-        totalAmount,
-        customer: customer._id
-      });
+      if (customer) {
+        // Get flowers for this bouquet to include in order
+        const bouquetFlowers = await Bouquet.findById(bouquet._id).populate('flowers.product');
+        const orderFlowers = bouquetFlowers.flowers.map(item => ({
+          flower: item.product._id,
+          quantity: item.quantity
+        }));
 
-      await order.save();
-      allOrders.push(order);
-      console.log(`✅ ORDER #${order.orderNumber}: ${customer.name} - $${totalAmount} - ${order.status}`);
+        const order = new Order({
+          customer: customer._id,
+          bouquet: bouquet._id,
+          flowers: orderFlowers,
+          totalAmount: bouquet.basePrice,
+          status: orderTemplate.status,
+          deliveryType: orderTemplate.deliveryType,
+          deliveryAddress: {
+            recipientName: customer.name,
+            ...customer.address,
+            phone: customer.phone
+          },
+          deliveryDate: orderTemplate.deliveryDate,
+          paymentStatus: 'paid',
+          paymentMethod: 'card',
+          specialInstructions: orderTemplate.specialInstructions
+        });
+
+        await order.save();
+        allOrders.push(order);
+        console.log(`✅ ORDER: ${customer.name} - ${bouquet.name} - $${bouquet.basePrice}`);
+      }
     }
+    console.log(`📊 Created ${allOrders.length} orders\n`);
 
-    console.log(`\n📊 Created ${allOrders.length} orders for ${customers.length} customers\n`);
-
-    // Generate Summary Report
-    console.log('🎉 ENHANCED SEEDING COMPLETED SUCCESSFULLY!');
-    console.log('===========================================\n');
+    // Generate Comprehensive Summary
+    console.log('🎉 COMPLETE DATA SEEDING FINISHED!');
+    console.log('==================================\n');
     
-    console.log('📈 SEEDING SUMMARY:');
+    console.log('📊 DATABASE SUMMARY:');
     console.log('-------------------');
-    console.log(`👑 Admin Accounts: ${demoAccounts.admins.length}`);
-    console.log(`🏪 Vendor Accounts: ${florists.length + nurseries.length}`);
-    console.log(`   ├── Florists: ${florists.length}`);
-    console.log(`   └── Nurseries: ${nurseries.length}`);
-    console.log(`👥 Customer Accounts: ${customers.length}`);
-    console.log(`💐 Products Created: ${allProducts.length}`);
-    console.log(`📦 Orders Generated: ${allOrders.length}\n`);
+    console.log(`👑 Admin Users: 1`);
+    console.log(`👥 Customers: ${sampleUsers.length}`);
+    console.log(`🏪 Vendors: ${allVendors.length}`);
+    console.log(`💐 Products: ${allProducts.length}`);
+    console.log(`💐 Bouquets: ${allBouquets.length}`);
+    console.log(`📦 Orders: ${allOrders.length}\n`);
 
-    console.log('🔐 DEMO ACCOUNT CREDENTIALS:');
-    console.log('----------------------------');
-    console.log('👑 ADMIN ACCOUNTS:');
-    demoAccounts.admins.forEach(admin => {
-      console.log(`   📧 ${admin.email} | 🔑 ${admin.password} | 👤 ${admin.name}`);
+    console.log('🔐 LOGIN CREDENTIALS:');
+    console.log('--------------------');
+    console.log('👑 ADMIN:');
+    console.log(`   📧 ${adminUser.email} / ${adminUser.password} - Full system access\n`);
+    
+    console.log('👥 CUSTOMERS:');
+    sampleUsers.forEach(user => {
+      console.log(`   📧 ${user.email} / ${user.password} - ${user.name}`);
+    });
+    
+    console.log('\n🏪 VENDORS:');
+    sampleVendors.forEach(vendor => {
+      console.log(`   📧 ${vendor.email} / ${vendor.password} - ${vendor.businessName}`);
     });
 
-    console.log('\n🏪 VENDOR ACCOUNTS:');
-    demoAccounts.florists.forEach(florist => {
-      console.log(`   📧 ${florist.email} | 🔑 ${florist.password} | 🌸 ${florist.businessName}`);
-    });
-    demoAccounts.nurseries.forEach(nursery => {
-      console.log(`   📧 ${nursery.email} | 🔑 ${nursery.password} | 🌿 ${nursery.businessName}`);
-    });
-
-    console.log('\n👥 CUSTOMER ACCOUNTS:');
-    demoAccounts.customers.forEach(customer => {
-      console.log(`   📧 ${customer.email} | 🔑 ${customer.password} | 👤 ${customer.name}`);
+    console.log('\n💐 PRODUCT CATEGORIES:');
+    const categoryCount = sampleProducts.reduce((acc, product) => {
+      acc[product.category] = (acc[product.category] || 0) + 1;
+      return acc;
+    }, {});
+    Object.entries(categoryCount).forEach(([category, count]) => {
+      console.log(`   ${category}: ${count} products`);
     });
 
-    console.log('\n🌐 APPLICATION ACCESS:');
-    console.log('---------------------');
-    console.log('   Frontend: http://localhost:3000');
-    console.log('   Backend API: http://localhost:5000');
-    console.log('\n💡 TESTING TIPS:');
-    console.log('---------------');
-    console.log('   1. Login as Admin to manage users and view all orders');
-    console.log('   2. Login as Vendor to manage products and view your orders');
-    console.log('   3. Login as Customer to browse products and place orders');
-    console.log('   4. Test different order statuses and payment scenarios');
-    console.log('   5. Explore vendor-specific product management');
+    console.log('\n🌐 ADMIN DASHBOARD FEATURES:');
+    console.log('--------------------------');
+    console.log('✅ User Management - View all users, vendors, and customers');
+    console.log('✅ Product Management - Manage all products and inventory');
+    console.log('✅ Order Management - View and manage all orders');
+    console.log('✅ Vendor Management - Approve/disable vendor accounts');
+    console.log('✅ Analytics - View sales reports and business metrics');
+
+    console.log('\n💡 TESTING SCENARIOS:');
+    console.log('-------------------');
+    console.log('1. Login as admin@flowery.com to access admin dashboard');
+    console.log('2. Login as customer to browse products and place orders');
+    console.log('3. Login as vendor to manage business profile');
+    console.log('4. Test admin features: user management, order tracking');
+    console.log('5. Explore product filtering by category and type');
 
   } catch (error) {
-    console.error('❌ SEEDING FAILED:', error);
-    process.exit(1);
+    console.error('❌ SEEDING FAILED:', error.message);
+    if (error.errors) {
+      Object.keys(error.errors).forEach(field => {
+        console.log(`   ${field}: ${error.errors[field].message}`);
+      });
+    }
   } finally {
     await mongoose.connection.close();
     console.log('\n🔌 Database connection closed');
   }
 }
 
-// Run if called directly
+// Run the seeding
 if (require.main === module) {
-  seedAdvanced().catch(console.error);
+  seedCompleteDataWithAdmin().catch(console.error);
 }
 
-module.exports = { seedAdvanced, demoAccounts };
+module.exports = { seedCompleteDataWithAdmin };

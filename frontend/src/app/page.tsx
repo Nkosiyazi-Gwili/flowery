@@ -239,7 +239,15 @@ export default function Home() {
                     {product.name}
                   </h3>
                   <p className="text-gray-600 text-sm mb-2">
-                    {product.vendor.businessName}
+                   {product.vendor && product.vendor.businessName ? (
+                    <p className="text-gray-600 text-sm mb-2">
+                      {product.vendor.businessName}
+                    </p>
+                  ) : (
+                    <p className="text-gray-600 text-sm mb-2">
+                      Flowery Vendor
+                    </p>
+                  )}
                   </p>
                   <div className="flex justify-between items-center">
                     <span className="text-green-600 font-bold text-lg">
