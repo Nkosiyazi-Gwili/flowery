@@ -91,74 +91,6 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Demo Accounts Toggle */}
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={() => setShowDemoAccounts(!showDemoAccounts)}
-            className="inline-flex items-center text-sm text-green-600 hover:text-green-700 font-medium"
-          >
-            {showDemoAccounts ? 'Hide Demo Accounts' : 'Show Demo Accounts'}
-            <svg 
-              className={`ml-1 h-4 w-4 transition-transform ${showDemoAccounts ? 'rotate-180' : ''}`} 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Demo Accounts Section */}
-        {showDemoAccounts && (
-          <div className="bg-white rounded-lg shadow-md p-6 border border-green-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-              🚀 Demo Accounts - Quick Login
-            </h3>
-            <div className="space-y-3">
-              {demoAccounts.map((account, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-3 hover:border-green-300 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-900">{account.role}</span>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                          {account.description}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        📧 {account.email}
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => handleDemoAccountClick(account.email, account.password)}
-                        className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 transition-colors"
-                      >
-                        Fill
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleQuickLogin(account.email, account.password)}
-                        className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
-                      >
-                        Login
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-              <p className="text-xs text-yellow-800 text-center">
-                💡 <strong>Tip:</strong> Click "Fill" to populate credentials, or "Login" for instant access
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -261,6 +193,73 @@ export default function Login() {
             </div>
           </form>
         </div>
+
+        {/* Demo Accounts Section - Now positioned under the form */}
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => setShowDemoAccounts(!showDemoAccounts)}
+            className="inline-flex items-center text-sm text-green-600 hover:text-green-700 font-medium mb-4"
+          >
+            {showDemoAccounts ? 'Hide Demo Accounts' : 'Show Demo Accounts'}
+            <svg 
+              className={`ml-1 h-4 w-4 transition-transform ${showDemoAccounts ? 'rotate-180' : ''}`} 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+
+        {showDemoAccounts && (
+          <div className="bg-white rounded-lg shadow-md p-6 border border-green-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+              🚀 Demo Accounts - Quick Login
+            </h3>
+            <div className="space-y-3">
+              {demoAccounts.map((account, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-3 hover:border-green-300 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-900">{account.role}</span>
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {account.description}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        📧 {account.email}
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDemoAccountClick(account.email, account.password)}
+                        className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 transition-colors"
+                      >
+                        Fill
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickLogin(account.email, account.password)}
+                        className="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition-colors"
+                      >
+                        Login
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-xs text-yellow-800 text-center">
+                💡 <strong>Tip:</strong> Click "Fill" to populate credentials, or "Login" for instant access
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Features Section */}
         <div className="text-center">

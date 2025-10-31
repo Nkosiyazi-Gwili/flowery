@@ -12,31 +12,37 @@ connectDB();
 
 const app = express();
 
-// CORS Configuration - Dynamic origins for production
+// CORS Configuration - Updated with your actual domains
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     const allowedOrigins = [
-      'https://your-flowery-app.vercel.app', // Replace with your actual Vercel URL
+      'https://flowery-front-end.vercel.app', // Your actual frontend domain
+      'https://flowery-frontend.vercel.app',   // Common alternative
       'http://localhost:3000',
       'http://localhost:3001',
-      'https://flowery-frontend.vercel.app', // Common Vercel pattern
-      'https://flowery.vercel.app', // Another common pattern
+      'http://localhost:5173',                 // Added for Vite dev server
+      'https://flowery-back-end.vercel.app',   // Allow backend to call itself if needed
     ];
     
+    // Log origin for debugging
+    console.log('CORS check for origin:', origin);
+    
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log('✅ CORS allowed for:', origin);
       callback(null, true);
     } else {
-      console.log('Blocked by CORS:', origin);
+      console.log('❌ CORS blocked for:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  maxAge: 86400 // 24 hours - cache preflight requests
 };
 
 // Apply CORS middleware
@@ -65,6 +71,25 @@ app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   
+  // CORS headers (redundant but ensures they're set)
+  if (req.headers.origin) {
+    const allowedOrigins = [
+      'https://flowery-front-end.vercel.app',
+      'https://flowery-frontend.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173'
+    ];
+    
+    if (allowedOrigins.includes(req.headers.origin)) {
+      res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    }
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
   next();
 });
 
@@ -73,6 +98,21 @@ app.use((req, res, next) => {
   // Simple rate limiting - you might want to implement a more robust solution
   console.log(`Rate limit check for IP: ${req.ip}`);
   next();
+});
+
+// Test route to verify CORS is working
+app.get('/api/cors-test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'CORS is working! 🎉',
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString(),
+    allowedOrigins: [
+      'https://flowery-front-end.vercel.app',
+      'https://flowery-frontend.vercel.app',
+      'http://localhost:3000'
+    ]
+  });
 });
 
 // API Routes
@@ -90,7 +130,8 @@ app.get('/', (req, res) => {
     message: 'Welcome to Flowery API 🌸',
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    frontendUrl: 'https://flowery-front-end.vercel.app'
   });
 });
 
@@ -99,7 +140,8 @@ app.get('/api/test', (req, res) => {
   res.json({
     success: true,
     message: 'Backend is working!',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    origin: req.headers.origin
   });
 });
 
@@ -115,6 +157,14 @@ app.get('/api/health', (req, res) => {
     memory: {
       used: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`,
       total: `${(process.memoryUsage().heapTotal / 1024 / 1024).toFixed(2)} MB`
+    },
+    cors: {
+      allowedOrigins: [
+        'https://flowery-front-end.vercel.app',
+        'https://flowery-frontend.vercel.app',
+        'http://localhost:3000'
+      ],
+      currentOrigin: req.headers.origin
     }
   };
   
@@ -129,13 +179,16 @@ app.get('/api/status', (req, res) => {
     status: 'operational',
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
+    frontend: 'https://flowery-front-end.vercel.app',
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
       products: '/api/products',
       orders: '/api/orders',
       admin: '/api/admin',
-      vendors: '/api/vendors'
+      vendors: '/api/vendors',
+      health: '/api/health',
+      corsTest: '/api/cors-test'
     }
   });
 });
@@ -154,7 +207,8 @@ app.use('/api/*', (req, res) => {
       '/api/admin',
       '/api/vendors',
       '/api/health',
-      '/api/status'
+      '/api/status',
+      '/api/cors-test'
     ]
   });
 });
@@ -168,10 +222,14 @@ app.use((err, req, res, next) => {
     return res.status(403).json({
       success: false,
       message: 'CORS policy: Origin not allowed',
+      yourOrigin: req.headers.origin,
       allowedOrigins: [
-        'https://your-flowery-app.vercel.app',
-        'http://localhost:3000'
-      ]
+        'https://flowery-front-end.vercel.app',
+        'https://flowery-frontend.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:3001'
+      ],
+      tip: 'Please make sure your frontend is deployed to one of the allowed domains'
     });
   }
   
@@ -240,6 +298,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📍 Port: ${PORT}`);
   console.log(`🌐 Health: http://localhost:${PORT}/api/health`);
   console.log(`📊 Status: http://localhost:${PORT}/api/status`);
+  console.log(`🔧 CORS Test: http://localhost:${PORT}/api/cors-test`);
+  console.log(`🎯 Frontend URL: https://flowery-front-end.vercel.app`);
   console.log(`🚀 Ready to receive requests!`);
 });
 
