@@ -345,7 +345,7 @@ export default function ProductsPage() {
                         {product.name}
                       </h3>
                       <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
-                      <p className="text-green-600 font-bold text-lg mb-4">${product.price}</p>
+                      <p className="text-green-600 font-bold text-lg mb-4">R{product.price}</p>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-500">
                           By {product.vendor?.businessName || 'Local Florist'}

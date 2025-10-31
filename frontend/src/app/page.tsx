@@ -243,7 +243,7 @@ export default function Home() {
                   </p>
                   <div className="flex justify-between items-center">
                     <span className="text-green-600 font-bold text-lg">
-                      ${product.price}
+                      R{product.price}
                     </span>
                     <div className="flex gap-2">
                       {product.inStock ? (
