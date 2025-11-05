@@ -26,7 +26,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // API base URL - uses environment variable for production
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://flowery-back-end.vercel.app/api';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);

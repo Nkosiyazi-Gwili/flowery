@@ -6,7 +6,7 @@ import Header from '../../../components/Header';
 import Link from 'next/link';
 
 // API base URL - uses environment variable for production
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://flowery-back-end.vercel.app/api';
 
 interface Product {
   _id: string;

@@ -19,12 +19,9 @@ const corsOptions = {
     if (!origin) return callback(null, true);
     
     const allowedOrigins = [
-      'https://your-flowery-app.vercel.app', // Replace with your actual Vercel URL
+      'https://flowery-front-end.vercel.app', 
       'http://localhost:3000',
-      'http://localhost:3001',
-      'https://flowery-frontend.vercel.app', // Common Vercel pattern
-n
-    ];
+  ];
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
