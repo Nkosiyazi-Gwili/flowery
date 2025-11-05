@@ -37,6 +37,7 @@ router.get('/', async (req, res) => {
     }
 
     const products = await Product.find(query)
+      .populate('vendor', 'businessName name email phone isVerified rating') // ADDED: Populate vendor data
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -85,6 +86,7 @@ router.get('/admin/all', protect, authorize('admin'), async (req, res) => {
     }
 
     const products = await Product.find(query)
+      .populate('vendor', 'businessName name email phone isVerified rating') // ADDED: Populate vendor data
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -107,13 +109,71 @@ router.get('/admin/all', protect, authorize('admin'), async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id)
+      .populate('vendor', 'businessName name email phone address businessType description rating reviewCount isVerified'); // ADDED: Populate vendor data
     
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
     res.json(product);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @desc    Get featured products
+// @route   GET /api/products/featured/all
+// @access  Public
+router.get('/featured/all', async (req, res) => {
+  try {
+    const products = await Product.find({ 
+      isFeatured: true, 
+      isActive: true,
+      inStock: true 
+    })
+      .populate('vendor', 'businessName name rating isVerified') // ADDED: Populate vendor data
+      .limit(8)
+      .sort({ popularity: -1 });
+
+    res.json({
+      success: true,
+      count: products.length,
+      products
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// @desc    Get products by vendor
+// @route   GET /api/products/vendor/:vendorId
+// @access  Public
+router.get('/vendor/:vendorId', async (req, res) => {
+  try {
+    const { vendorId } = req.params;
+    const { page = 1, limit = 12 } = req.query;
+
+    const products = await Product.find({ 
+      vendor: vendorId,
+      isActive: true 
+    })
+      .populate('vendor', 'businessName name rating isVerified') // ADDED: Populate vendor data
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Product.countDocuments({ 
+      vendor: vendorId, 
+      isActive: true 
+    });
+
+    res.json({
+      products,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total
+    });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -155,7 +215,8 @@ router.post('/', async (req, res) => {
       careInstructions,
       vaseLife,
       tags,
-      isFeatured
+      isFeatured,
+      vendor // ADDED: vendor field is required in model
     } = req.body;
 
     // Check if product already exists
@@ -165,6 +226,11 @@ router.post('/', async (req, res) => {
     
     if (existingProduct) {
       return res.status(400).json({ message: 'Product with this name already exists' });
+    }
+
+    // Validate required vendor field
+    if (!vendor) {
+      return res.status(400).json({ message: 'Vendor is required' });
     }
 
     // Auto-set inStock based on stockQuantity
@@ -187,10 +253,15 @@ router.post('/', async (req, res) => {
       vaseLife,
       tags: tags || [],
       isFeatured: isFeatured || false,
-      isActive: true
+      isActive: true,
+      vendor // ADDED: vendor field
     });
 
-    res.status(201).json(product);
+    // Populate vendor data in response
+    const populatedProduct = await Product.findById(product._id)
+      .populate('vendor', 'businessName name email phone isVerified rating');
+
+    res.status(201).json(populatedProduct);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -217,7 +288,8 @@ router.put('/:id', async (req, res) => {
       vaseLife,
       tags,
       isFeatured,
-      isActive
+      isActive,
+      vendor // ADDED: vendor field
     } = req.body;
 
     const product = await Product.findById(req.params.id);
@@ -263,10 +335,11 @@ router.put('/:id', async (req, res) => {
         vaseLife,
         tags,
         isFeatured,
-        isActive
+        isActive,
+        vendor // ADDED: vendor field
       },
       { new: true, runValidators: true }
-    );
+    ).populate('vendor', 'businessName name email phone isVerified rating'); // ADDED: Populate vendor data
 
     res.json(updatedProduct);
   } catch (error) {
@@ -312,7 +385,7 @@ router.patch('/:id/stock', async (req, res) => {
         inStock
       },
       { new: true }
-    );
+    ).populate('vendor', 'businessName name email phone isVerified rating'); // ADDED: Populate vendor data
 
     res.json(updatedProduct);
   } catch (error) {
@@ -335,7 +408,7 @@ router.patch('/:id/featured', async (req, res) => {
       req.params.id,
       { isFeatured: !product.isFeatured },
       { new: true }
-    );
+    ).populate('vendor', 'businessName name email phone isVerified rating'); // ADDED: Populate vendor data
 
     res.json(updatedProduct);
   } catch (error) {
@@ -358,7 +431,7 @@ router.patch('/:id/active', async (req, res) => {
       req.params.id,
       { isActive: !product.isActive },
       { new: true }
-    );
+    ).populate('vendor', 'businessName name email phone isVerified rating'); // ADDED: Populate vendor data
 
     res.json(updatedProduct);
   } catch (error) {
@@ -384,7 +457,7 @@ router.patch('/:id/out-of-stock', async (req, res) => {
         stockQuantity: 0 
       },
       { new: true }
-    );
+    ).populate('vendor', 'businessName name email phone isVerified rating'); // ADDED: Populate vendor data
 
     res.json(updatedProduct);
   } catch (error) {
@@ -412,7 +485,7 @@ router.patch('/:id/restock', async (req, res) => {
         stockQuantity: stockQuantity || 10 
       },
       { new: true }
-    );
+    ).populate('vendor', 'businessName name email phone isVerified rating'); // ADDED: Populate vendor data
 
     res.json(updatedProduct);
   } catch (error) {
@@ -431,9 +504,6 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Instead of hard delete, we can soft delete by setting isActive to false
-    // await Product.findByIdAndDelete(req.params.id);
-    
     // Soft delete approach (recommended)
     await Product.findByIdAndUpdate(
       req.params.id,
