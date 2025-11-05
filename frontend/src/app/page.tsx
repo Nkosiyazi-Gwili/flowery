@@ -4,16 +4,20 @@ import axios from 'axios';
 import Link from 'next/link';
 import Header from '../components/Header';
 
+interface Vendor {
+  businessName?: string;
+  name?: string;
+}
+
 interface Product {
   _id: string;
   name: string;
   price: number;
   images: string[];
   category: string;
-  vendor: {
-    businessName: string;
-    name: string;
-  };
+  vendor?: Vendor;
+  vendorBusinessName?: string;
+  vendorName?: string;
   inStock: boolean;
   isActive: boolean;
 }
@@ -32,24 +36,39 @@ export default function Home() {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/products`);
+      const response = await axios.get(`${API_BASE_URL}/products?populate=vendor`);
       
       // Handle different response structures
+      let productsData: Product[] = [];
+      
       if (response.data.products) {
         // New API structure
-        const activeProducts = response.data.products.filter((product: Product) => 
+        productsData = response.data.products.filter((product: Product) => 
           product.isActive !== false && product.inStock !== false
         );
-        setProducts(activeProducts.slice(0, 8)); // Show only first 8 products
       } else if (response.data.success && response.data.data) {
         // Alternative API structure
-        setProducts(response.data.data.slice(0, 8));
+        productsData = response.data.data;
       } else if (Array.isArray(response.data)) {
         // Direct array response
-        setProducts(response.data.slice(0, 8));
+        productsData = response.data;
       } else {
-        setProducts([]);
+        productsData = [];
       }
+
+      // Process products to ensure vendor data is properly structured
+      const processedProducts = productsData.map(product => ({
+        ...product,
+        vendor: product.vendor ? {
+          businessName: product.vendor.businessName || product.vendorBusinessName || 'Flowery Vendor',
+          name: product.vendor.name || product.vendorName || 'Unknown Vendor'
+        } : {
+          businessName: product.vendorBusinessName || 'Flowery Vendor',
+          name: product.vendorName || 'Unknown Vendor'
+        }
+      }));
+
+      setProducts(processedProducts.slice(0, 8)); // Show only first 8 products
       setError('');
     } catch (error: any) {
       console.error('Error fetching products:', error);
@@ -70,6 +89,17 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to safely get vendor business name
+  const getVendorBusinessName = (product: Product): string => {
+    if (product.vendor?.businessName) {
+      return product.vendor.businessName;
+    }
+    if (product.vendorBusinessName) {
+      return product.vendorBusinessName;
+    }
+    return 'Flowery Vendor';
   };
 
   // Enhanced sample product data for better fallback
@@ -239,15 +269,7 @@ export default function Home() {
                     {product.name}
                   </h3>
                   <p className="text-gray-600 text-sm mb-2">
-                   {product.vendor && product.vendor.businessName ? (
-                    <p className="text-gray-600 text-sm mb-2">
-                      {product.vendor.businessName}
-                    </p>
-                  ) : (
-                    <p className="text-gray-600 text-sm mb-2">
-                      Flowery Vendor
-                    </p>
-                  )}
+                    {getVendorBusinessName(product)}
                   </p>
                   <div className="flex justify-between items-center">
                     <span className="text-green-600 font-bold text-lg">

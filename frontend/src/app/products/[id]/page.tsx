@@ -8,6 +8,12 @@ import Link from 'next/link';
 // API base URL - uses environment variable for production
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://flowery-back-end.vercel.app/api';
 
+interface Vendor {
+  _id?: string;
+  businessName: string;
+  name: string;
+}
+
 interface Product {
   _id: string;
   name: string;
@@ -17,10 +23,9 @@ interface Product {
   category: string;
   stockQuantity: number;
   inStock: boolean;
-  vendor: {
-    businessName: string;
-    name: string;
-  };
+  vendor?: Vendor;
+  vendorBusinessName?: string;
+  vendorName?: string;
   tags?: string[];
 }
 
@@ -46,15 +51,34 @@ export default function ProductDetail() {
       setLoading(true);
       setError('');
       
-      const response = await axios.get(`${API_BASE_URL}/products/${productId}`);
+      const response = await axios.get(`${API_BASE_URL}/products/${productId}?populate=vendor`);
       
       // Handle different response structures
+      let productData: Product | null = null;
+      
       if (response.data.product) {
-        setProduct(response.data.product);
+        productData = response.data.product;
       } else if (response.data) {
-        setProduct(response.data);
+        productData = response.data;
       } else {
         setError('Product not found');
+        return;
+      }
+
+      // Process vendor data to ensure it's properly structured
+      if (productData) {
+        const processedProduct: Product = {
+          ...productData,
+          vendor: productData.vendor ? {
+            _id: productData.vendor._id || 'unknown',
+            businessName: productData.vendor.businessName || productData.vendorBusinessName || 'Local Florist',
+            name: productData.vendor.name || productData.vendorName || 'Unknown Vendor'
+          } : {
+            businessName: productData.vendorBusinessName || 'Local Florist',
+            name: productData.vendorName || 'Unknown Vendor'
+          }
+        };
+        setProduct(processedProduct);
       }
     } catch (error: any) {
       console.error('Error fetching product:', error);
@@ -70,6 +94,28 @@ export default function ProductDetail() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to safely get vendor business name
+  const getVendorBusinessName = (product: Product): string => {
+    if (product.vendor?.businessName) {
+      return product.vendor.businessName;
+    }
+    if (product.vendorBusinessName) {
+      return product.vendorBusinessName;
+    }
+    return 'Local Florist';
+  };
+
+  // Helper function to safely get vendor contact name
+  const getVendorContactName = (product: Product): string => {
+    if (product.vendor?.name) {
+      return product.vendor.name;
+    }
+    if (product.vendorName) {
+      return product.vendorName;
+    }
+    return 'Unknown Vendor';
   };
 
   // Simple cart function for demo - replace with your actual cart implementation
@@ -143,7 +189,7 @@ export default function ProductDetail() {
     stockQuantity: 10,
     inStock: true,
     vendor: {
-      businessName: 'Local Florist',
+      businessName: 'Rose Paradise Florist',
       name: 'Sarah Wilson'
     },
     tags: ['bouquet', 'fresh', 'arrangement']
@@ -151,6 +197,10 @@ export default function ProductDetail() {
 
   // Use actual product if available, otherwise use sample for demo
   const displayProduct = product || sampleProduct;
+
+  // Safely get vendor information
+  const vendorBusinessName = getVendorBusinessName(displayProduct);
+  const vendorContactName = getVendorContactName(displayProduct);
 
   if (loading) {
     return (
@@ -259,7 +309,7 @@ export default function ProductDetail() {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{displayProduct.name}</h1>
               <p className="text-2xl text-green-600 font-bold mb-4">R{displayProduct.price}</p>
               <p className="text-gray-600 mb-4">
-                Sold by: <span className="font-semibold text-gray-800">{displayProduct.vendor.businessName}</span>
+                Sold by: <span className="font-semibold text-gray-800">{vendorBusinessName}</span>
               </p>
             </div>
 
@@ -367,10 +417,10 @@ export default function ProductDetail() {
               <h3 className="font-semibold text-gray-900 text-lg mb-3">About the Vendor</h3>
               <div className="space-y-2">
                 <p className="text-gray-700">
-                  <span className="font-medium">Business:</span> {displayProduct.vendor.businessName}
+                  <span className="font-medium">Business:</span> {vendorBusinessName}
                 </p>
                 <p className="text-gray-700">
-                  <span className="font-medium">Contact:</span> {displayProduct.vendor.name}
+                  <span className="font-medium">Contact:</span> {vendorContactName}
                 </p>
                 <p className="text-gray-600 text-sm mt-3">
                   Supporting local businesses and bringing you the freshest flowers.
@@ -383,7 +433,7 @@ export default function ProductDetail() {
               <h3 className="font-semibold text-green-900 text-lg mb-3">🚚 Fast Delivery</h3>
               <ul className="text-green-800 space-y-1">
                 <li>• Fresh flowers delivered within hours</li>
-                <li>• Free delivery on orders over $50</li>
+                <li>• Free delivery on orders over R50</li>
                 <li>• Quality guaranteed</li>
               </ul>
             </div>

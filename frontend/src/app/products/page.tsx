@@ -18,6 +18,9 @@ interface Product {
     businessName: string;
     name: string;
   };
+  // Fallback vendor fields if vendor object is not populated
+  vendorBusinessName?: string;
+  vendorName?: string;
 }
 
 // API base URL - uses environment variable for production
@@ -51,21 +54,43 @@ export default function ProductsPage() {
       if (searchTerm) params.search = searchTerm;
       if (selectedCategory) params.category = selectedCategory;
 
+      // Add populate parameter to get vendor data
+      params.populate = 'vendor';
+
       const response = await axios.get(`${API_BASE_URL}/products`, { params });
       
       // Handle different API response structures
+      let productsData: Product[] = [];
+      
       if (response.data.products) {
         // New API structure with products array
-        setProducts(response.data.products);
+        productsData = response.data.products;
       } else if (Array.isArray(response.data)) {
         // Direct array response
-        setProducts(response.data);
+        productsData = response.data;
       } else if (response.data.success && response.data.data) {
         // Success wrapper with data array
-        setProducts(response.data.data);
+        productsData = response.data.data;
       } else {
-        setProducts([]);
+        productsData = [];
       }
+
+      // Process products to ensure vendor data is available
+      const processedProducts = productsData.map(product => ({
+        ...product,
+        // Ensure vendor object has all required fields
+        vendor: product.vendor ? {
+          _id: product.vendor._id || 'unknown',
+          businessName: product.vendor.businessName || 'Unknown Business',
+          name: product.vendor.name || 'Unknown Vendor'
+        } : {
+          _id: 'unknown',
+          businessName: 'Unknown Business',
+          name: 'Unknown Vendor'
+        }
+      }));
+
+      setProducts(processedProducts);
       setError('');
     } catch (error: any) {
       console.error('Error fetching products:', error);
@@ -88,7 +113,7 @@ export default function ProductsPage() {
     }
   };
 
-  // Enhanced sample products data
+  // Enhanced sample products data with proper vendor structure
   const sampleProducts: Product[] = [
     {
       _id: '1',
@@ -99,7 +124,11 @@ export default function ProductsPage() {
       category: 'roses',
       stockQuantity: 15,
       inStock: true,
-      vendor: { _id: 'v1', businessName: 'Rose Garden Florist', name: 'Sarah Wilson' }
+      vendor: { 
+        _id: 'v1', 
+        businessName: 'Rose Garden Florist', 
+        name: 'Sarah Wilson' 
+      }
     },
     {
       _id: '2',
@@ -110,7 +139,11 @@ export default function ProductsPage() {
       category: 'sunflowers',
       stockQuantity: 8,
       inStock: true,
-      vendor: { _id: 'v2', businessName: 'Sunny Blooms', name: 'Mike Johnson' }
+      vendor: { 
+        _id: 'v2', 
+        businessName: 'Sunny Blooms', 
+        name: 'Mike Johnson' 
+      }
     },
     {
       _id: '3',
@@ -121,7 +154,11 @@ export default function ProductsPage() {
       category: 'lilies',
       stockQuantity: 12,
       inStock: true,
-      vendor: { _id: 'v3', businessName: 'Lily Palace', name: 'Emily Davis' }
+      vendor: { 
+        _id: 'v3', 
+        businessName: 'Lily Palace', 
+        name: 'Emily Davis' 
+      }
     },
     {
       _id: '4',
@@ -132,7 +169,11 @@ export default function ProductsPage() {
       category: 'tulips',
       stockQuantity: 0,
       inStock: false,
-      vendor: { _id: 'v4', businessName: 'Tulip Time', name: 'Robert Brown' }
+      vendor: { 
+        _id: 'v4', 
+        businessName: 'Tulip Time', 
+        name: 'Robert Brown' 
+      }
     },
     {
       _id: '5',
@@ -143,7 +184,11 @@ export default function ProductsPage() {
       category: 'orchids',
       stockQuantity: 6,
       inStock: true,
-      vendor: { _id: 'v5', businessName: 'Orchid Oasis', name: 'Lisa Anderson' }
+      vendor: { 
+        _id: 'v5', 
+        businessName: 'Orchid Oasis', 
+        name: 'Lisa Anderson' 
+      }
     },
     {
       _id: '6',
@@ -154,7 +199,11 @@ export default function ProductsPage() {
       category: 'mixed',
       stockQuantity: 20,
       inStock: true,
-      vendor: { _id: 'v6', businessName: 'Seasonal Blooms', name: 'David Miller' }
+      vendor: { 
+        _id: 'v6', 
+        businessName: 'Seasonal Blooms', 
+        name: 'David Miller' 
+      }
     },
     {
       _id: '7',
@@ -165,7 +214,11 @@ export default function ProductsPage() {
       category: 'roses',
       stockQuantity: 10,
       inStock: true,
-      vendor: { _id: 'v7', businessName: 'Premium Florals', name: 'Jennifer Taylor' }
+      vendor: { 
+        _id: 'v7', 
+        businessName: 'Premium Florals', 
+        name: 'Jennifer Taylor' 
+      }
     },
     {
       _id: '8',
@@ -176,7 +229,11 @@ export default function ProductsPage() {
       category: 'mixed',
       stockQuantity: 0,
       inStock: false,
-      vendor: { _id: 'v8', businessName: 'Wildflower Co.', name: 'Chris Wilson' }
+      vendor: { 
+        _id: 'v8', 
+        businessName: 'Wildflower Co.', 
+        name: 'Chris Wilson' 
+      }
     }
   ];
 
@@ -190,6 +247,17 @@ export default function ProductsPage() {
     const matchesCategory = !selectedCategory || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  // Helper function to get vendor business name safely
+  const getVendorBusinessName = (product: Product): string => {
+    if (product.vendor?.businessName) {
+      return product.vendor.businessName;
+    }
+    if (product.vendorBusinessName) {
+      return product.vendorBusinessName;
+    }
+    return 'Local Florist';
+  };
 
   const sampleImages = [
     'https://images.unsplash.com/photo-1487070183333-3c4e16b9eb47?w=400',
@@ -348,7 +416,7 @@ export default function ProductsPage() {
                       <p className="text-green-600 font-bold text-lg mb-4">R{product.price}</p>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-500">
-                          By {product.vendor?.businessName || 'Local Florist'}
+                          By {getVendorBusinessName(product)}
                         </span>
                         <Link 
                           href={`/products/${product._id}`}

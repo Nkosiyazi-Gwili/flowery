@@ -67,6 +67,11 @@ const productSchema = new mongoose.Schema({
   salesCount: {
     type: Number,
     default: 0
+  },
+  vendor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor',
+    required: true
   }
 }, {
   timestamps: true
@@ -97,5 +102,6 @@ productSchema.pre('save', function(next) {
 // Index for better search performance
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 productSchema.index({ category: 1, type: 1, isActive: 1 });
+productSchema.index({ vendor: 1 }); // Add index for vendor field
 
 module.exports = mongoose.model('Product', productSchema);
